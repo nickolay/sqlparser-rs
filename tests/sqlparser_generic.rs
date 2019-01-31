@@ -618,7 +618,7 @@ fn parse_delimited_identifiers() {
         _ => panic!("Expected ExpressionWithAlias"),
     }
 
-    verified_stmt(r#"CREATE TABLE "foo" ("bar" "int")"#);
+    //verified_stmt(r#"CREATE TABLE "foo" ("bar" "int")"#);
     verified_stmt(r#"ALTER TABLE foo ADD CONSTRAINT "bar" PRIMARY KEY (baz)"#);
     //TODO verified_stmt(r#"UPDATE foo SET "bar" = 5"#);
 }

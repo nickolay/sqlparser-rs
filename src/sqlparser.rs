@@ -1009,7 +1009,8 @@ impl Parser {
     /// Parse a SQL datatype (in the context of a CREATE TABLE statement for example)
     pub fn parse_data_type(&mut self) -> Result<SQLType, ParserError> {
         match self.next_token() {
-            Some(Token::SQLWord(k)) => match k.keyword.as_ref() {
+            Some(Token::SQLWord(k)) => match k.value.to_ascii_uppercase().as_ref() {
+                // TBD: MSSQL allows system types to be quoted...
                 "BOOLEAN" => Ok(SQLType::Boolean),
                 "FLOAT" => Ok(SQLType::Float(self.parse_optional_precision()?)),
                 "REAL" => Ok(SQLType::Real),
@@ -1023,7 +1024,7 @@ impl Parser {
                 "SMALLINT" => Ok(SQLType::SmallInt),
                 "INT" | "INTEGER" => Ok(SQLType::Int),
                 "BIGINT" => Ok(SQLType::BigInt),
-                "VARCHAR" => Ok(SQLType::Varchar(self.parse_optional_precision()?)),
+                "VARCHAR" | "NVARCHAR" => Ok(SQLType::Varchar(self.parse_optional_precision()?)), // TBD: ms-specific nvarchar
                 "CHAR" | "CHARACTER" => {
                     if self.parse_keyword("VARYING") {
                         Ok(SQLType::Varchar(self.parse_optional_precision()?))
@@ -1090,7 +1091,7 @@ impl Parser {
                     }
                 }
                 "BYTEA" => Ok(SQLType::Bytea),
-                "NUMERIC" => {
+                "NUMERIC" | "DECIMAL" => {
                     let (precision, scale) = self.parse_optional_precision_scale()?;
                     Ok(SQLType::Decimal(precision, scale))
                 }
