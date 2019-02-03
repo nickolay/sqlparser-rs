@@ -361,7 +361,9 @@ keyword!(
     WITHIN,
     WITHOUT,
     YEAR,
-    ZONE
+    ZONE,
+    CLUSTERED,
+    TEXTIMAGE_ON
 );
 
 /// special case of keyword where the it is an invalid identifier
@@ -711,6 +713,8 @@ pub const ALL_KEYWORDS: &'static [&'static str] = &[
     WITHOUT,
     YEAR,
     ZONE,
+    CLUSTERED,
+    TEXTIMAGE_ON,
     END_EXEC,
 ];
 

@@ -689,9 +689,69 @@ impl Parser {
 
         loop {
             match self.next_token() {
+                Some(Token::SQLWord(ref w)) if w.keyword == "CONSTRAINT" => {
+                    // Named constraint <https://jakewheat.github.io/sql-overview/sql-2011-foundation-grammar.html#table-constraint-definition>
+                    // The "CONSTRAINT <name>" part should be optional, but we don't support that yet.
+
+                    // Some examples:
+                    // CONSTRAINT [PK_MYTAB] PRIMARY KEY CLUSTERED ([RK])
+                    // CONSTRAINT [uc_TASK] UNIQUE ([REPORT_DATE], [TASK_ID])
+                    // CONSTRAINT [CK_MYTAB_REF_CODE] CHECK (rtrim(ltrim([REF_CODE]))<>''),
+                    // CONSTRAINT [FK_MYTAB_REF_TYPE] FOREIGN KEY ([REF_TYPE_RK]) REFERENCES [dbo].[REF_TYPE_DIM] ([RK])
+                    let _ = self.parse_identifier()?;
+                    if self.parse_keywords(vec!["PRIMARY", "KEY", "CLUSTERED"]) // CLUSTERED is MSSQL-specific
+                        || self.parse_keyword("UNIQUE")
+                        || self.parse_keyword("CHECK")
+                    {
+                        self.expect_token(&Token::LParen)?;
+                        let _ = self.parse_order_by_expr_list();
+                        self.expect_token(&Token::RParen)?;
+                    } else if self.parse_keywords(vec!["FOREIGN", "KEY"]) {
+                        self.expect_token(&Token::LParen)?;
+                        let _ = self.parse_order_by_expr_list();
+                        self.expect_token(&Token::RParen)?;
+                        self.expect_keyword("REFERENCES")?;
+                        let _ = self.parse_object_name()?;
+                        self.expect_token(&Token::LParen)?;
+                        let _ = self.parse_order_by_expr_list();
+                        self.expect_token(&Token::RParen)?;
+                    } else {
+                        return parser_err!(format!(
+                            "Expected PRIMARY KEY or UNIQUE constraint, got {:?}",
+                            self.peek_token()
+                        ));
+                    }
+                }
+                Some(Token::SQLWord(ref w)) if w.keyword == "PRIMARY" => {
+                    self.expect_keyword("KEY")?;
+                    let _ = self.parse_keyword("CLUSTERED"); // MSSQL-specific
+                    self.expect_token(&Token::LParen)?;
+                    let _ = self.parse_order_by_expr_list();
+                    self.expect_token(&Token::RParen)?;
+                    if self.parse_keyword("WITH") {
+                        // MSSQL-specific
+                        // <index_option>
+                        self.expect_token(&Token::LParen)?;
+                        let _ = self.parse_expr_list();
+                        self.expect_token(&Token::RParen)?;
+                    }
+                    if self.parse_keyword("ON") {
+                        let _ = self.consume_token(&Token::make_word("PRIMARY", Some('[')));
+                    }
+                    //debug!("{:?}", self.peek_token());
+                    //return parser_err!("Oops");
+                }
                 Some(Token::SQLWord(column_name)) => {
+                    // TBD: MSSQL-specific computed columns (`value AS qty * price`)
                     let data_type = self.parse_data_type()?;
                     let is_primary = self.parse_keywords(vec!["PRIMARY", "KEY"]);
+                    if self.parse_keyword("IDENTITY") {
+                        // `rk int IDENTITY` or `rk int IDENTITY(1,1)`
+                        if self.consume_token(&Token::LParen) {
+                            let _ = self.parse_expr_list()?;
+                            self.expect_token(&Token::RParen)?;
+                        }
+                    }
                     let is_unique = self.parse_keyword("UNIQUE");
                     let default = if self.parse_keyword("DEFAULT") {
                         let expr = self.parse_default_expr(0)?;
@@ -706,6 +766,13 @@ impl Parser {
                     } else {
                         true
                     };
+                    // (NOT) NULL can precede DEFAULT, at least in MSSQL??
+                    let default = default.or(if self.parse_keyword("DEFAULT") {
+                        let expr = self.parse_default_expr(0)?;
+                        Some(expr)
+                    } else {
+                        None
+                    });
                     debug!("default: {:?}", default);
 
                     columns.push(SQLColumnDef {
@@ -716,23 +783,33 @@ impl Parser {
                         is_unique,
                         default,
                     });
-                    match self.next_token() {
-                        Some(Token::Comma) => {}
-                        Some(Token::RParen) => {
-                            break;
-                        }
-                        other => {
-                            return parser_err!(format!(
-                                "Expected ',' or ')' after column definition but found {:?}",
-                                other
-                            ));
-                        }
-                    }
                 }
                 unexpected => {
                     return parser_err!(format!("Expected column name, got {:?}", unexpected));
                 }
             }
+            match self.next_token() {
+                Some(Token::Comma) => {
+                    if self.consume_token(&Token::RParen) {
+                        break; // dangling comma
+                    }
+                }
+                Some(Token::RParen) => {
+                    break;
+                }
+                other => {
+                    return parser_err!(format!(
+                        "Expected ',' or ')' after column definition but found {:?}",
+                        other
+                    ));
+                }
+            }
+        }
+        if self.parse_keyword("ON") {
+            let _ = self.consume_token(&Token::make_word("PRIMARY", Some('[')));
+        }
+        if self.parse_keyword("TEXTIMAGE_ON") {
+            let _ = self.consume_token(&Token::make_word("PRIMARY", Some('[')));
         }
 
         Ok(columns)
