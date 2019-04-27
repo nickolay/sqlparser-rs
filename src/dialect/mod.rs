@@ -20,4 +20,16 @@ pub trait Dialect {
     fn is_identifier_start(&self, ch: char) -> bool;
     /// Determine if a character is a valid unquoted identifier character
     fn is_identifier_part(&self, ch: char) -> bool;
+
+    fn foo(&self) -> u8 {
+        self.bar() + self.baz()
+    }
+
+    fn bar(&self) -> u8 {
+        3
+    }
+
+    fn baz(&self) -> u8 {
+        5
+    }
 }

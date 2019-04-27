@@ -13,4 +13,8 @@ impl Dialect for AnsiSqlDialect {
             || (ch >= '0' && ch <= '9')
             || ch == '_'
     }
+
+    fn baz(&self) -> u8 {
+        self.bar()
+    }
 }

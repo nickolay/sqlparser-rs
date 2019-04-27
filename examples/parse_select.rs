@@ -1,5 +1,7 @@
 #![warn(clippy::all)]
 
+use sqlparser::dialect::Dialect;
+use sqlparser::dialect::AnsiSqlDialect;
 use sqlparser::dialect::GenericSqlDialect;
 use sqlparser::sqlparser::*;
 
@@ -14,4 +16,8 @@ fn main() {
     let ast = Parser::parse_sql(&dialect, sql.to_string()).unwrap();
 
     println!("AST: {:?}", ast);
+
+    let dialect = AnsiSqlDialect {};
+    println!("FOO {}", dialect.foo());
+
 }
