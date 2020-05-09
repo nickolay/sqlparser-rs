@@ -1,0 +1,5 @@
+tasks:
+  - init: cargo run --example parse_select
+    name: example
+  - init: cargo test --quiet
+    name: Tests

@@ -5,6 +5,7 @@
 [![Build Status](https://travis-ci.org/andygrove/sqlparser-rs.svg?branch=master)](https://travis-ci.org/andygrove/sqlparser-rs)
 [![Coverage Status](https://coveralls.io/repos/github/andygrove/sqlparser-rs/badge.svg?branch=master)](https://coveralls.io/github/andygrove/sqlparser-rs?branch=master)
 [![Gitter Chat](https://badges.gitter.im/sqlparser-rs/community.svg)](https://gitter.im/sqlparser-rs/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/andygrove/sqlparser-rs) 
 
 The goal of this project is to build a SQL lexer and parser capable of parsing
 SQL that conforms with the [ANSI/ISO SQL standard][sql-standard] while also
