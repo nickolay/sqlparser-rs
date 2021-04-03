@@ -11,6 +11,7 @@
 // limitations under the License.
 
 #![warn(clippy::all)]
+
 //! Test SQL syntax specific to SQLite. The parser based on the
 //! generic dialect is also tested (on the inputs it can handle).
 

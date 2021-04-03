@@ -16,6 +16,8 @@
 //!
 //! The tokens then form the input for the parser, which outputs an Abstract Syntax Tree (AST).
 
+#![warn(clippy::all)]
+
 use std::iter::Peekable;
 use std::str::Chars;
 
