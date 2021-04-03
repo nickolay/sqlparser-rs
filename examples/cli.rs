@@ -16,21 +16,32 @@
 /// Run with `cargo run --example cli`
 use std::fs;
 
+use simple_logger::SimpleLogger;
 use sqlparser::dialect::*;
 use sqlparser::{parser::Parser, tokenizer::Tokenizer};
 
 fn main() {
-    simple_logger::init().unwrap();
+    SimpleLogger::new().init().unwrap();
 
     let filename = std::env::args().nth(1).expect(
-        "No arguments provided!\n\n\
-         Usage: cargo run --example cli FILENAME.sql [--dialectname]",
+        r#"
+No arguments provided!
+
+Usage:
+$ cargo run --example cli FILENAME.sql [--dialectname]
+
+To print the parse results as JSON:
+$ cargo run --feature json_example --example cli FILENAME.sql [--dialectname]
+
+"#,
     );
 
     let dialect: Box<dyn Dialect> = match std::env::args().nth(2).unwrap_or_default().as_ref() {
         "--ansi" => Box::new(AnsiDialect {}),
         "--postgres" => Box::new(PostgreSqlDialect {}),
         "--ms" => Box::new(MsSqlDialect {}),
+        "--snowflake" => Box::new(SnowflakeDialect {}),
+        "--hive" => Box::new(HiveDialect {}),
         "--generic" | "" => Box::new(GenericDialect {}),
         s => panic!("Unexpected parameter: {}", s),
     };
@@ -53,7 +64,7 @@ fn main() {
             std::process::exit(1);
         });
 
-    let mut parser = Parser::new(tokens);
+    let mut parser = Parser::new(tokens, &*dialect);
     let parse_result = parser.parse_statements();
 
     match parse_result {
@@ -68,16 +79,14 @@ fn main() {
                         .join("\n")
                 );
                 println!("Parse results:\n{:#?}", statements);
-            } else {
-                #[cfg(feature = "cst")]
+            } else if cfg!(feature = "json_example") {
+                #[cfg(feature = "json_example")]
                 {
-                    let syn = parser.syntax();
-                    println!("Parse tree:\n{:#?}", syn);
-                    let serialized = serde_json::to_string(&syn).unwrap();
-                    println!("Parse tree as json:\n{}", serialized);
-                    let serialized = serde_json::to_string(&statements).unwrap();
-                    println!("AST as JSON:\n{}", serialized);
+                    let serialized = serde_json::to_string_pretty(&statements).unwrap();
+                    println!("Serialized as JSON:\n{}", serialized);
                 }
+            } else {
+                println!("Parse results:\n{:#?}", statements);
             }
         }
         Err(e) => {

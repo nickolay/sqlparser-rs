@@ -10,15 +10,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
 /// Unary operators
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum UnaryOperator {
     Plus,
     Minus,
     Not,
+    /// Bitwise Not, e.g. `~9` (PostgreSQL-specific)
+    PGBitwiseNot,
+    /// Square root, e.g. `|/9` (PostgreSQL-specific)
+    PGSquareRoot,
+    /// Cube root, e.g. `||/27` (PostgreSQL-specific)
+    PGCubeRoot,
+    /// Factorial, e.g. `9!` (PostgreSQL-specific)
+    PGPostfixFactorial,
+    /// Factorial, e.g. `!!9` (PostgreSQL-specific)
+    PGPrefixFactorial,
+    /// Absolute value, e.g. `@ -9` (PostgreSQL-specific)
+    PGAbs,
 }
 
 impl fmt::Display for UnaryOperator {
@@ -27,12 +41,19 @@ impl fmt::Display for UnaryOperator {
             UnaryOperator::Plus => "+",
             UnaryOperator::Minus => "-",
             UnaryOperator::Not => "NOT",
+            UnaryOperator::PGBitwiseNot => "~",
+            UnaryOperator::PGSquareRoot => "|/",
+            UnaryOperator::PGCubeRoot => "||/",
+            UnaryOperator::PGPostfixFactorial => "!",
+            UnaryOperator::PGPrefixFactorial => "!!",
+            UnaryOperator::PGAbs => "@",
         })
     }
 }
 
 /// Binary operators
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum BinaryOperator {
     Plus,
     Minus,
@@ -44,6 +65,7 @@ pub enum BinaryOperator {
     Lt,
     GtEq,
     LtEq,
+    Spaceship,
     Eq,
     NotEq,
     And,
@@ -53,6 +75,9 @@ pub enum BinaryOperator {
     BitwiseOr,
     BitwiseAnd,
     BitwiseXor,
+    PGBitwiseXor,
+    PGBitwiseShiftLeft,
+    PGBitwiseShiftRight,
 }
 
 impl fmt::Display for BinaryOperator {
@@ -68,6 +93,7 @@ impl fmt::Display for BinaryOperator {
             BinaryOperator::Lt => "<",
             BinaryOperator::GtEq => ">=",
             BinaryOperator::LtEq => "<=",
+            BinaryOperator::Spaceship => "<=>",
             BinaryOperator::Eq => "=",
             BinaryOperator::NotEq => "<>",
             BinaryOperator::And => "AND",
@@ -77,6 +103,9 @@ impl fmt::Display for BinaryOperator {
             BinaryOperator::BitwiseOr => "|",
             BinaryOperator::BitwiseAnd => "&",
             BinaryOperator::BitwiseXor => "^",
+            BinaryOperator::PGBitwiseXor => "#",
+            BinaryOperator::PGBitwiseShiftLeft => "<<",
+            BinaryOperator::PGBitwiseShiftRight => ">>",
         })
     }
 }
